@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Batman Gotham</title>
+    <style>
+      :root {
+        --bg: #070b13;
+        --bg-2: #121d2d;
+        --panel: rgba(12, 18, 29, 0.72);
+        --panel-strong: rgba(14, 21, 34, 0.95);
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #edf3ff;
+        --muted: #9caac0;
+        --gold: #f7c35c;
+        --gold-soft: #ffe3a4;
+        --blue: #7ec8ff;
+        --red: #e53935;
+        --shadow: rgba(0, 0, 0, 0.55);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(104, 111, 150, 0.18), transparent 35%),
+          linear-gradient(180deg, var(--bg) 0%, #05080d 32%, var(--bg-2) 100%);
+        color: var(--text);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,0.015),
+            rgba(255,255,255,0.015) 1px,
+            transparent 1px,
+            transparent 3px
+          );
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+
+      .page {
+        position: relative;
+        min-height: 100vh;
+        isolation: isolate;
+      }
+
+      .page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent 32%, transparent 68%, rgba(255,255,255,0.02));
+        pointer-events: none;
+      }
+
+      .skyline {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 54vh;
+        background:
+          linear-gradient(180deg, rgba(12,15,24,0.2), rgba(12,15,24,0.7) 70%, rgba(11,14,22,0.95)),
+          radial-gradient(circle at 50% 20%, rgba(64,78,115,0.25), transparent 25%);
+        overflow: hidden;
+        z-index: 0;
+      }
+
+      .skyline .moon {
+        position: absolute;
+        width: 130px;
+        height: 130px;
+        right: 14%;
+        top: 10%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #fef7d5, #d4d9ee 40%, rgba(255,255,255,0.25) 70%, transparent 100%);
+        box-shadow: 0 0 30px rgba(200, 219, 255, 0.35), 0 0 80px rgba(143, 168, 255, 0.15);
+      }
+
+      .skyline .moon::after {
+        content: "";
+        position: absolute;
+        inset: 14px;
+        border-radius: 50%;
+        background: rgba(3,7,15,0.12);
+        filter: blur(4px);
+      }
+
+      .buildings {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 100%;
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 5vw;
+      }
+
+      .building {
+        position: relative;
+        width: clamp(42px, 5vw, 80px);
+        background: linear-gradient(180deg, rgba(22, 28, 39, 0.7), rgba(7, 10, 16, 0.92));
+        border-top: 2px solid rgba(255,255,255,0.05);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      }
+
+      .building::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.04),
+          rgba(255,255,255,0.04) 2px,
+          transparent 2px,
+          transparent 7px
+        );
+        opacity: 0.55;
+      }
+
+      .building::after {
+        content: "";
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        top: 8%;
+        bottom: 0;
+        background: linear-gradient(90deg,
+          rgba(255,255,255,0.03),
+          rgba(255,255,255,0.01),
+          rgba(255,255,255,0.035)
+        );
+      }
+
+      .building.tall { height: 72%; }
+      .building.mid { height: 56%; }
+      .building.short { height: 40%; }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 80px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding: 18px 22px;
+        border: 1px solid var(--line);
+        background: rgba(9, 15, 24, 0.38);
+        backdrop-filter: blur(8px);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.88rem;
+        color: var(--text);
+      }
+
+      .brand-mark {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f6d37b 0%, #f0a500 50%, #e4a63c 100%);
+        box-shadow: 0 0 12px rgba(247, 195, 92, 0.8);
+        position: relative;
+      }
+
+      .brand-mark::before {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        border: 2px solid rgba(58, 40, 5, 0.3);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        flex-wrap: wrap;
+      }
+
+      .nav a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: color 0.2s ease;
+      }
+
+      .nav a:hover {
+        color: var(--gold-soft);
+      }
+
+      .cta {
+        border: 1px solid rgba(247, 195, 92, 0.5);
+        background: linear-gradient(135deg, rgba(247,195,92,0.14), rgba(247,195,92,0.03));
+        color: var(--gold-soft);
+        padding: 0.8rem 1.1rem;
+        border-radius: 12px;
+        font-size: 0.76rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(247,195,92,0.18);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        align-items: center;
+        gap: 36px;
+        padding-top: 72px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        color: var(--gold-soft);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(3rem, 6vw, 6rem);
+        line-height: 0.9;
+        letter-spacing: -0.06em;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .title-accent {
+        display: block;
+        color: transparent;
+        -webkit-text-stroke: 1px rgba(255,255,255,0.8);
+        text-shadow: 0 0 30px rgba(126,200,255,0.09);
+      }
+
+      .intro {
+        max-width: 620px;
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 1.08rem;
+        line-height: 1.7;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 28px;
+      }
+
+      .primary, .secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        padding: 0 1.3rem;
+        border-radius: 14px;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.78rem;
+        font-weight: 700;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .primary {
+        background: linear-gradient(135deg, #f7c35c 0%, #d0a54b 100%);
+        color: #111827;
+        box-shadow: 0 12px 28px rgba(247,195,92,0.28);
+      }
+
+      .secondary {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: var(--text);
+      }
+
+      .primary:hover, .secondary:hover {
+        transform: translateY(-2px);
+      }
+
+      .stats {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+
+      .stat {
+        min-width: 110px;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--line);
+        background: rgba(9, 13, 20, 0.56);
+        border-radius: 16px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.5rem;
+        letter-spacing: -0.05em;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .batman-panel {
+        position: relative;
+        min-height: 480px;
+      }
+
+      .batman-card {
+        position: relative;
+        width: min(100%, 430px);
+        margin-left: auto;
+        padding: 22px;
+        border-radius: 26px;
+        background: linear-gradient(160deg, rgba(17,24,35,0.82), rgba(7,10,17,0.95));
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 24px 50px rgba(0,0,0,0.42);
+      }
+
+      .batman-figure {
+        position: relative;
+        width: 100%;
+        height: 430px;
+        border-radius: 22px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 15%, rgba(130,146,170,0.18), transparent 25%),
+          linear-gradient(180deg, rgba(16, 24, 34, 0.9), rgba(8,11,17,1));
+      }
+
+      .batman-silhouette {
+        position: absolute;
+        left: 50%;
+        top: 18%;
+        width: 220px;
+        height: 300px;
+        transform: translateX(-50%);
+      }
+
+      .batman-silhouette::before,
+      .batman-silhouette::after {
+        content: "";
+        position: absolute;
+      }
+
+      .batman-silhouette::before {
+        width: 170px;
+        height: 210px;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, rgba(17,21,29,0.05), rgba(0,0,0,0.15));
+        clip-path: polygon(30% 0, 70% 0, 82% 18%, 100% 40%, 100% 100%, 0 100%, 0 40%, 18% 18%);
+      }
+
+      .batman-silhouette::after {
+        width: 120px;
+        height: 160px;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0));
+        clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 66%, 86% 100%, 14% 100%, 0 66%, 0 25%);
+      }
+
+      .cape {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        width: 260px;
+        height: 120px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, rgba(10,14,20,0.95), rgba(3,5,9,1));
+        clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+        box-shadow: 0 0 35px rgba(0,0,0,0.3);
+      }
+
+      .cape::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0 15%, rgba(255,255,255,0.06) 15% 16%, transparent 16% 31%, rgba(255,255,255,0.05) 31% 32%, transparent 32% 48%, rgba(255,255,255,0.06) 48% 49%, transparent 49% 66%, rgba(255,255,255,0.04) 66% 67%, transparent 67% 100%);
+      }
+
+      .emblem {
+        position: absolute;
+        left: 50%;
+        top: 36%;
+        width: 100px;
+        height: 100px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.07);
+      }
+
+      .emblem::before {
+        content: "";
+        position: absolute;
+        inset: 18px;
+        background: #020509;
+        clip-path: polygon(50% 0, 77% 40%, 100% 40%, 62% 65%, 78% 100%, 50% 78%, 22% 100%, 38% 65%, 0 40%, 23% 40%);
+      }
+
+      .card-badges {
+        position: absolute;
+        inset: auto 18px 18px 18px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .badge {
+        flex: 1;
+        padding: 0.9rem 0.8rem;
+        border-radius: 14px;
+        background: rgba(10,14,23,0.82);
+        border: 1px solid rgba(255,255,255,0.06);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .badge strong {
+        display: block;
+        color: var(--gold-soft);
+        font-size: 1.1rem;
+        letter-spacing: -0.06em;
+      }
+
+      .section {
+        margin-top: 64px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .feature {
+        position: relative;
+        background: rgba(10, 15, 22, 0.72);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 24px 22px;
+        box-shadow: 0 16px 30px rgba(0,0,0,0.1);
+      }
+
+      .feature .icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, rgba(247,195,92,0.16), rgba(126,200,255,0.1));
+        border: 1px solid rgba(247,195,92,0.2);
+        margin-bottom: 18px;
+      }
+
+      .feature h3 {
+        margin: 0 0 10px 0;
+        font-size: 1.18rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .feature p {
+        margin: 0;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      @media (max-width: 920px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding-top: 50px;
+        }
+
+        .batman-panel {
+          order: -1;
+          min-height: 330px;
+        }
+
+        .batman-card {
+          margin: 0 auto;
+          width: min(100%, 520px);
+        }
+
+        .section {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .nav {
+          gap: 10px 16px;
+        }
+
+        .stats {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        h1 {
+          font-size: 3rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="skyline" aria-hidden="true">
+        <div class="moon"></div>
+        <div class="buildings">
+          <div class="building tall" style="height:60%"></div>
+          <div class="building short" style="height:48%"></div>
+          <div class="building mid" style="height:70%"></div>
+          <div class="building tall" style="height:82%"></div>
+          <div class="building short" style="height:54%"></div>
+          <div class="building mid" style="height:66%"></div>
+          <div class="building tall" style="height:78%"></div>
+          <div class="building short" style="height:50%"></div>
+          <div class="building mid" style="height:60%"></div>
+          <div class="building tall" style="height:84%"></div>
+          <div class="building short" style="height:42%"></div>
+          <div class="building mid" style="height:68%"></div>
+          <div class="building tall" style="height:75%"></div>
+        </div>
+      </div>
+
+      <div class="container">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark"></span>
+            <span>Batman</span>
+          </div>
+
+          <nav class="nav" aria-label="Navegación principal">
+            <a href="#inicio">Inicio</a>
+            <a href="#historia">Historia</a>
+            <a href="#gotham">Gotham</a>
+            <a href="#mito">Mito</a>
+          </nav>
+
+          <a class="cta" href="#descubre">Descubre más</a>
+        </header>
+
+        <main>
+          <section class="hero" id="inicio">
+            <div>
+              <span class="eyebrow">Ciudad de pesadillas</span>
+              <h1>
+                Batman
+                <span class="title-accent">Gotham</span>
+              </h1>
+
+              <p class="intro">
+                En la oscuridad de Gotham, la justicia no espera a la noche. El murciélago vigila desde las alturas,
+                donde la corrupción se esconde y la valentía se convierte en leyenda.
+              </p>
+
+              <div class="actions">
+                <a class="primary" href="#descubre">Ver historia</a>
+                <a class="secondary" href="#gotham">Explorar Gotham</a>
+              </div>
+
+              <div class="stats" aria-label="estadísticas del caballero oscuro">
+                <div class="stat">
+                  <strong>30+</strong>
+                  <span>Años</span>
+                </div>
+                <div class="stat">
+                  <strong>1</strong>
+                  <span>Destino</span>
+                </div>
+                <div class="stat">
+                  <strong>∞</strong>
+                  <span>Legado</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="batman-panel" aria-label="Ilustración del caballero oscuro">
+              <div class="batman-card">
+                <div class="batman-figure">
+                  <div class="cape"></div>
+                  <div class="batman-silhouette"></div>
+                  <div class="emblem"></div>
+
+                  <div class="card-badges">
+                    <div class="badge">
+                      Quédate
+                      <strong>vigilante</strong>
+                    </div>
+                    <div class="badge">
+                      Ciudad
+                      <strong>Gotham</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="descubre">
+            <article class="feature" id="historia">
+              <div class="icon">🦇</div>
+              <h3>Origen</h3>
+              <p>
+                Bruce Wayne juró defender la ciudad después de presenciar el crimen y la tragedia más profunda de su vida.
+                De ese dolor nació el símbolo más temido del mundo.
+              </p>
+            </article>
+
+            <article class="feature" id="gotham">
+              <div class="icon">🏙️</div>
+              <h3>Gotham</h3>
+              <p>
+                Una metrópolis de sombras, corrupción y ambición. En Gotham, cada rascacielos guarda secretos y cada noche exige valor.
+              </p>
+            </article>
+
+            <article class="feature" id="mito">
+              <div class="icon">⚡</div>
+              <h3>La leyenda</h3>
+              <p>
+                El caballero oscuro representa la verdad, la disciplina y la esperanza. No tiene miedo a la noche, porque sabe
+                que la noche necesita un héroe.
+              </p>
+            </article>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const page = document.querySelector('.page');
+      const skyline = document.querySelector('.skyline');
+
+      document.addEventListener('mousemove', (event) => {
+        const x = (event.clientX / window.innerWidth - 0.5) * 18;
+        const y = (event.clientY / window.innerHeight - 0.5) * 18;
+        page.style.setProperty('--mouse-x', `${x}px`);
+        page.style.setProperty('--mouse-y', `${y}px`);
+        skyline.style.transform = `translate(${x * 0.5}px, ${y * 0.4}px)`;
+      });
+    </script>
+  </body>
+</html>

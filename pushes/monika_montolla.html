@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#0b0d19">
+	<title>Visor 3D — Cubo</title>
+	<style>
+		:root{color-scheme:dark;--size:190px;--violet:#9b82ff;--muted:#969bb5}
+		*{box-sizing:border-box}body{margin:0;min-height:100vh;color:#f3f2ff;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% 38%,#24204a 0,#111329 43%,#090b15 100%)}
+		button,input{font:inherit}.page{width:min(1080px,calc(100% - 40px));margin:auto;min-height:100vh;display:flex;flex-direction:column}
+		header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff14}.brand{font-size:13px;font-weight:750;letter-spacing:.17em}.brand i{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:9px;border-radius:9px;background:linear-gradient(135deg,#ab91ff,#6953dd);font-style:normal}.status{color:#b7bbce;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.status:before{content:"";display:inline-block;width:7px;height:7px;margin-right:8px;border-radius:50%;background:#67e6ac;box-shadow:0 0 10px #67e6ac}
+		main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:center;padding:36px 0}.stage,.controls{border:1px solid #ffffff14;border-radius:22px;background:#ffffff06;box-shadow:0 22px 70px #0003}.stage{min-height:530px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}.stage:before{content:"";position:absolute;width:390px;height:390px;border-radius:50%;background:#8b6aff18;filter:blur(65px);pointer-events:none}.heading{position:absolute;z-index:2;top:25px;left:28px}.eyebrow{color:#64d8e3;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}h1{margin:5px 0;font-size:26px;letter-spacing:-.04em}.badge{position:absolute;top:28px;right:25px;padding:6px 10px;border:1px solid #ffffff18;border-radius:20px;color:#c4c6d8;font-size:10px;letter-spacing:.08em}
+		.scene{z-index:1;position:relative;width:100%;height:370px;display:grid;place-items:center;perspective:850px;touch-action:none;cursor:grab}.scene:active{cursor:grabbing}.cube{position:relative;width:var(--size);height:var(--size);transform-style:preserve-3d;transition:transform .08s linear}.face{position:absolute;inset:0;display:grid;place-items:center;border:1px solid #ffffffb8;box-shadow:inset 0 0 35px #ffffff26;backface-visibility:visible}.face:after{content:"";position:absolute;inset:12px;border:1px solid #ffffff40}.face b{z-index:1;font-size:39px;text-shadow:0 5px 16px #24144f88}.front{transform:translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#b7a1ff,#7455dc)}.back{transform:rotateY(180deg) translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#5144af,#8b70ed)}.right{transform:rotateY(90deg) translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#55d3dc,#3979c5)}.left{transform:rotateY(-90deg) translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#e78abb,#9d55c6)}.top{transform:rotateX(90deg) translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#fff0ae,#f29c77)}.bottom{transform:rotateX(-90deg) translateZ(calc(var(--size)/2));background:linear-gradient(145deg,#56507f,#292e59)}.floor{position:absolute;top:66%;width:290px;height:90px;border-radius:50%;background:#050611;filter:blur(20px)}.hint{position:absolute;bottom:23px;left:27px;color:var(--muted);font-size:11px}.angles{position:absolute;bottom:23px;right:25px;display:flex;gap:12px;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}.angles strong{color:#ddd9f7;font-weight:500}
+		.controls{padding:22px}.controls h2{margin:0;font-size:15px}.sub{margin:4px 0 20px;color:var(--muted);font-size:11px}.label{display:flex;justify-content:space-between;margin:17px 0 8px;color:#ddddec;font-size:11px}.value{color:#b4a3ff}input[type=range]{display:block;width:100%;height:3px;accent-color:#9b82ff;cursor:pointer}.section{margin:21px 0 10px;padding-top:17px;border-top:1px solid #ffffff14;font-size:11px;font-weight:600}.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.preset,.action{border:1px solid #ffffff17;border-radius:9px;background:#ffffff08;color:#d5d4e5;cursor:pointer;transition:.18s}.preset{min-height:56px;font-size:10px}.preset span{display:block;font-size:17px}.preset:hover,.preset.active{border-color:#ab91ff99;background:#9b82ff1c;color:white}.actions{display:grid;grid-template-columns:1fr 42px;gap:8px;margin-top:17px}.action{height:40px;font-size:11px}.action.primary{border-color:transparent;background:linear-gradient(105deg,#9475f2,#6955d5);color:white;font-weight:650}.action:hover{filter:brightness(1.15)}footer{padding:0 0 20px;color:#747a96;text-align:center;font-size:10px;letter-spacing:.1em}
+		@media(max-width:760px){.page{width:min(560px,calc(100% - 28px))}header{height:64px}main{grid-template-columns:1fr;gap:15px;padding:18px 0 28px}.stage{min-height:440px}.scene{height:315px}.heading{top:20px;left:20px}.badge{top:22px;right:16px}.controls{padding:19px}.hint{left:17px}.angles{right:16px;gap:8px}}@media(max-width:420px){:root{--size:160px}.stage{min-height:410px}.scene{height:290px}h1{font-size:22px}.badge{font-size:9px}.angles{font-size:9px}}
+	</style>
+</head>
+<body>
+	<div class="page">
+		<header><div class="brand"><i>✦</i> CUBO / 3D</div><div class="status">Escena interactiva</div></header>
+		<main>
+			<section class="stage" aria-label="Visualizador de cubo 3D">
+				<div class="heading"><div class="eyebrow">Visor espacial</div><h1>Un cubo, mil ángulos</h1></div>
+				<div class="badge">● &nbsp; VISTA EN VIVO</div>
+				<div class="floor" aria-hidden="true"></div>
+				<div class="scene" id="scene" aria-label="Arrastra el cubo para girarlo">
+					<div class="cube" id="cube">
+						<div class="face front"><b>✦</b></div><div class="face back"><b>◈</b></div>
+						<div class="face right"><b>✧</b></div><div class="face left"><b>❋</b></div>
+						<div class="face top"><b>✺</b></div><div class="face bottom"><b>◇</b></div>
+					</div>
+				</div>
+				<div class="hint">↔ &nbsp; Arrastra para explorar</div>
+				<div class="angles"><span>ROT X <strong id="xRead">−25°</strong></span><span>ROT Y <strong id="yRead">−35°</strong></span></div>
+			</section>
+			<aside class="controls">
+				<h2>Controles</h2><p class="sub">Personaliza tu vista del cubo.</p>
+				<label class="label" for="rotX">Rotación X <span class="value" id="xVal">−25°</span></label>
+				<input id="rotX" type="range" min="-180" max="180" value="-25">
+				<label class="label" for="rotY">Rotación Y <span class="value" id="yVal">−35°</span></label>
+				<input id="rotY" type="range" min="-180" max="180" value="-35">
+				<label class="label" for="cubeSize">Tamaño <span class="value" id="sizeVal">190 px</span></label>
+				<input id="cubeSize" type="range" min="130" max="250" value="190">
+				<div class="section">Vistas rápidas</div>
+				<div class="presets">
+					<button class="preset active" data-x="-25" data-y="-35"><span>▣</span>Iso</button>
+					<button class="preset" data-x="0" data-y="0"><span>□</span>Frontal</button>
+					<button class="preset" data-x="-55" data-y="35"><span>◇</span>Arriba</button>
+				</div>
+				<div class="actions"><button class="action primary" id="spin">Ⅱ &nbsp; Pausar giro</button><button class="action" id="reset" aria-label="Restablecer">↺</button></div>
+			</aside>
+		</main>
+		<footer>GIRA · DESCUBRE · DISFRUTA</footer>
+	</div>
+	<script>
+		const cube=document.getElementById('cube'),scene=document.getElementById('scene');
+		const sx=document.getElementById('rotX'),sy=document.getElementById('rotY'),ss=document.getElementById('cubeSize');
+		let x=-25,y=-35,spinning=true,dragging=false,px=0,py=0,last=0;
+		const angle=n=>`${n<0?'−':''}${Math.abs(Math.round(n))}°`;
+		function draw(){cube.style.transform=`rotateX(${x}deg) rotateY(${y}deg)`;sx.value=Math.round(x);sy.value=Math.round(y);document.getElementById('xVal').textContent=document.getElementById('xRead').textContent=angle(x);document.getElementById('yVal').textContent=document.getElementById('yRead').textContent=angle(y)}
+		sx.addEventListener('input',()=>{x=+sx.value;draw()});sy.addEventListener('input',()=>{y=+sy.value;draw()});
+		ss.addEventListener('input',()=>{document.documentElement.style.setProperty('--size',ss.value+'px');document.getElementById('sizeVal').textContent=ss.value+' px'});
+		document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.preset').forEach(a=>a.classList.remove('active'));b.classList.add('active');x=+b.dataset.x;y=+b.dataset.y;draw()}));
+		scene.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;scene.setPointerCapture(e.pointerId)});
+		scene.addEventListener('pointermove',e=>{if(!dragging)return;y+=.55*(e.clientX-px);x-=.55*(e.clientY-py);px=e.clientX;py=e.clientY;x=Math.max(-180,Math.min(180,x));y=Math.max(-180,Math.min(180,y));document.querySelectorAll('.preset').forEach(a=>a.classList.remove('active'));draw()});
+		scene.addEventListener('pointerup',()=>dragging=false);scene.addEventListener('pointercancel',()=>dragging=false);
+		document.getElementById('spin').addEventListener('click',e=>{spinning=!spinning;e.currentTarget.innerHTML=spinning?'Ⅱ &nbsp; Pausar giro':'▶ &nbsp; Girar cubo'});
+		document.getElementById('reset').addEventListener('click',()=>{x=-25;y=-35;ss.value=190;document.documentElement.style.setProperty('--size','190px');document.getElementById('sizeVal').textContent='190 px';document.querySelectorAll('.preset').forEach((a,i)=>a.classList.toggle('active',i===0));draw()});
+		function animate(t){if(spinning&&!dragging){y+=(last?Math.min(t-last,40):0)*.012;if(y>180)y-=360;draw()}last=t;requestAnimationFrame(animate)}draw();requestAnimationFrame(animate);
+	</script>
+</body>
+</html>
