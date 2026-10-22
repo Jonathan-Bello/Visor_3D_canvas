@@ -1,557 +1,222 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Triángulo 3D editable</title>
-
+<title>Editor 3D de cubo</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #101827;
-  color: white;
-  text-align: center;
-}
-
-h1 {
-  padding-top: 20px;
-}
-
-canvas {
-  width: 90%;
-  max-width: 800px;
-  height: 450px;
-  display: block;
-  margin: auto;
-  border: 1px solid #34445c;
-  border-radius: 12px;
-  touch-action: none;
-}
-
-.controls {
-  max-width: 650px;
-  margin: 20px auto;
-  padding: 20px;
-  background: #1b2638;
-  border-radius: 12px;
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 12px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-input, select {
-  width: 90px;
-  padding: 7px;
-  border-radius: 5px;
-}
-
-button {
-  padding: 10px 15px;
-  margin: 5px;
-  cursor: pointer;
-  border: 0;
-  border-radius: 7px;
-  background: #42c9f5;
-  color: #101827;
-  font-weight: bold;
-}
-
-p {
-  color: #c4d0e2;
-}
+  :root { color-scheme: dark; --bg:#0b1020; --panel:#121a2d; --line:#26334d; --text:#edf3ff; --muted:#9eacc6; --accent:#65d6ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,sans-serif; background:radial-gradient(circle at 20% 0%,#182848,var(--bg) 55%); color:var(--text); }
+  header { padding:22px 24px 10px; max-width:1250px; margin:auto; }
+  h1 { margin:0 0 6px; font-size:clamp(1.4rem,3vw,2rem); }
+  header p { margin:0; color:var(--muted); }
+  main { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(290px,1fr); gap:16px; max-width:1250px; margin:16px auto; padding:0 16px 24px; }
+  .panel { background:rgba(18,26,45,.94); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 14px 40px #0003; }
+  #scene { width:100%; height: min(68vh,650px); min-height:360px; display:block; touch-action:pan-y; }
+  .scene-footer { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:12px 16px; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); }
+  .controls { padding:18px; display:flex; flex-direction:column; gap:18px; }
+  h2 { margin:0 0 12px; font-size:1.05rem; }
+  .control { margin:12px 0; }
+  .control-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:7px; font-size:.92rem; }
+  output, .pill { color:var(--accent); font-variant-numeric:tabular-nums; }
+  input[type=range] { width:100%; accent-color:var(--accent); cursor:pointer; }
+  select, input[type=number] { background:#0b1222; border:1px solid #34425e; color:var(--text); border-radius:8px; padding:9px; width:100%; }
+  .xyz { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .xyz label { color:var(--muted); font-size:.8rem; display:block; margin-bottom:5px; }
+  button { background:#1b2b46; border:1px solid #385172; color:var(--text); padding:10px 12px; border-radius:9px; cursor:pointer; font-weight:600; }
+  button:hover { background:#263c5e; }
+  .buttons { display:flex; flex-wrap:wrap; gap:8px; }
+  .hint { color:var(--muted); font-size:.85rem; line-height:1.45; }
+  .status { color:#b7f7d2; font-size:.85rem; min-height:1.2em; }
+  @media(max-width:850px) { main { grid-template-columns:1fr; } #scene { height:52vh; min-height:320px; } }
 </style>
 </head>
-
 <body>
-
-<h1>Triángulo 3D editable</h1>
-<p>Arrastra la vista para girarla y modifica los vértices.</p>
-
-<canvas id="scene"></canvas>
-
-<div class="controls">
-
-  <h2>Seleccionar vértice</h2>
-
-  <select id="vertex">
-    <option value="0">Vértice A</option>
-    <option value="1">Vértice B</option>
-    <option value="2">Vértice C</option>
-  </select>
-
-  <div class="row">
-    <label>X
-      <input id="x" type="number" step="0.1" value="-1">
-    </label>
-
-    <label>Y
-      <input id="y" type="number" step="0.1" value="-1">
-    </label>
-
-    <label>Z
-      <input id="z" type="number" step="0.1" value="0">
-    </label>
-  </div>
-
-  <button id="apply">Modificar vértice</button>
-  <button id="reset">Restaurar triángulo</button>
-
-  <h2>Grosor de la figura</h2>
-
-  <div class="row">
-    <label>Profundidad
-      <input id="depth" type="number"
-        min="0.1" max="5" step="0.1" value="0.8">
-    </label>
-  </div>
-
-  <h2>Rotación</h2>
-
-  <div class="row">
-    <label>Rotación X
-      <input id="rx" type="range"
-        min="-180" max="180" value="0">
-    </label>
-
-    <label>Rotación Y
-      <input id="ry" type="range"
-        min="-180" max="180" value="0">
-    </label>
-
-    <label>Rotación Z
-      <input id="rz" type="range"
-        min="-180" max="180" value="0">
-    </label>
-  </div>
-
-  <p id="status">Selecciona un vértice para editarlo.</p>
-
-</div>
-
+<header>
+  <h1>Editor 3D · Cubo editable</h1>
+  <p>Rota el objeto y mueve sus vértices para crear nuevas formas, todo desde el navegador.</p>
+</header>
+<main>
+  <section class="panel">
+    <canvas id="scene" aria-label="Vista 3D interactiva"></canvas>
+    <div class="scene-footer">
+      <span>Arrastra para girar la vista · rueda para acercar/alejar</span>
+      <span id="vertexCount">8 vértices · 12 aristas</span>
+    </div>
+  </section>
+  <aside class="panel controls">
+    <section>
+      <h2>Rotación del objeto</h2>
+      <div class="control"><div class="control-head"><label for="rotX">Rotación X</label><output id="rotXVal">25°</output></div><input id="rotX" type="range" min="-180" max="180" value="25"></div>
+      <div class="control"><div class="control-head"><label for="rotY">Rotación Y</label><output id="rotYVal">-25°</output></div><input id="rotY" type="range" min="-180" max="180" value="-25"></div>
+      <div class="control"><div class="control-head"><label for="rotZ">Rotación Z</label><output id="rotZVal">0°</output></div><input id="rotZ" type="range" min="-180" max="180" value="0"></div>
+    </section>
+    <section>
+      <h2>Editar vértice</h2>
+      <div class="control">
+        <div class="control-head"><label for="vertexSelect">Vértice seleccionado</label></div>
+        <select id="vertexSelect">
+          <option value="0">Vértice 1 · (-1, -1, -1)</option>
+          <option value="1">Vértice 2 · (1, -1, -1)</option>
+          <option value="2">Vértice 3 · (1, 1, -1)</option>
+          <option value="3">Vértice 4 · (-1, 1, -1)</option>
+          <option value="4">Vértice 5 · (-1, -1, 1)</option>
+          <option value="5">Vértice 6 · (1, -1, 1)</option>
+          <option value="6">Vértice 7 · (1, 1, 1)</option>
+          <option value="7">Vértice 8 · (-1, 1, 1)</option>
+        </select>
+      </div>
+      <div class="xyz">
+        <div><label for="vx">X</label><input id="vx" type="number" step="0.1" value="-1"></div>
+        <div><label for="vy">Y</label><input id="vy" type="number" step="0.1" value="-1"></div>
+        <div><label for="vz">Z</label><input id="vz" type="number" step="0.1" value="-1"></div>
+      </div>
+      <p class="hint">Cambia X, Y y Z para mover el vértice. Las aristas conectadas se ajustan automáticamente.</p>
+      <div class="buttons">
+        <button id="applyVertex">Aplicar coordenadas</button>
+        <button id="resetVertex">Restaurar vértice</button>
+      </div>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+    <section>
+      <h2>Acciones rápidas</h2>
+      <div class="buttons">
+        <button id="resetAll">Restaurar cubo</button>
+        <button id="spin">Giro automático: apagado</button>
+        <button id="toggleGrid">Ocultar cuadrícula</button>
+      </div>
+    </section>
+  </aside>
+</main>
 <script type="module">
-import * as THREE from
-'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-// ESCENA
-const canvas = document.getElementById('scene');
-
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true
-});
-
-renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio, 2)
-);
-
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-
+const canvas = document.querySelector('#scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x101827);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(4.4, 3.6, 5.2);
+const ambient = new THREE.HemisphereLight(0xcde8ff, 0x26304b, 2.1); scene.add(ambient);
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4,6,5); scene.add(key);
 
-const camera = new THREE.PerspectiveCamera(
-  45, 1, 0.1, 100
-);
-
-camera.position.set(4, 3, 6);
-camera.lookAt(0, 0, 0);
-
-// ILUMINACIÓN
-scene.add(
-  new THREE.AmbientLight(0xffffff, 1.2)
-);
-
-const light = new THREE.DirectionalLight(
-  0xffffff, 3
-);
-
-light.position.set(4, 6, 5);
-scene.add(light);
-
-// LUZ ADICIONAL PARA ILUMINAR LOS LADOS
-const fillLight = new THREE.DirectionalLight(
-  0x78bfff, 1.5
-);
-
-fillLight.position.set(-4, 2, -5);
-scene.add(fillLight);
-
-// VÉRTICES INICIALES
+const object = new THREE.Group(); scene.add(object);
 const initial = [
-  [-1, -1, 0],
-  [ 1, -1, 0],
-  [ 0,  1, 0]
+  [-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],
+  [-1,-1,1], [1,-1,1], [1,1,1], [-1,1,1]
 ];
-
 let vertices = initial.map(v => [...v]);
-
-let depth = 0.8;
-
-// GRUPO 3D
-const object = new THREE.Group();
-scene.add(object);
-
-// GEOMETRÍA CON VOLUMEN
-const geometry = new THREE.BufferGeometry();
-
-const material = new THREE.MeshStandardMaterial({
-  color: 0x16c7e8,
-  side: THREE.DoubleSide,
-  roughness: 0.32,
-  metalness: 0.12,
-  flatShading: true
-});
-
-const solid = new THREE.Mesh(geometry, material);
-
-solid.castShadow = true;
-solid.receiveShadow = true;
-
-object.add(solid);
-
-// BORDES BLANCOS
+const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+const faces = [[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]];
+const faceGeometry = new THREE.BufferGeometry();
+const faceMaterial = new THREE.MeshStandardMaterial({color:0x36b9e8, transparent:true, opacity:0.19, side:THREE.DoubleSide, roughness:.35, metalness:.1});
+const mesh = new THREE.Mesh(faceGeometry, faceMaterial); object.add(mesh);
 const edgeGeometry = new THREE.BufferGeometry();
-
-const edgeLines = new THREE.LineSegments(
-  edgeGeometry,
-  new THREE.LineBasicMaterial({
-    color: 0xffffff
-  })
-);
-
-object.add(edgeLines);
-
-// PUNTOS DE LOS VÉRTICES
-const pointGeometry = new THREE.BufferGeometry();
-
-const pointCloud = new THREE.Points(
-  pointGeometry,
-  new THREE.PointsMaterial({
-    color: 0xffd166,
-    size: 0.14,
-    sizeAttenuation: true
-  })
-);
-
-object.add(pointCloud);
-
-// VÉRTICE SELECCIONADO
+const edgeMaterial = new THREE.LineBasicMaterial({color:0x8be5ff});
+const lineSegments = new THREE.LineSegments(edgeGeometry, edgeMaterial); object.add(lineSegments);
+const pointsGeometry = new THREE.BufferGeometry();
+const pointMaterial = new THREE.PointsMaterial({color:0xffffff, size:0.095, sizeAttenuation:true});
+const points = new THREE.Points(pointsGeometry, pointMaterial); object.add(points);
 const selectedGeometry = new THREE.BufferGeometry();
+const selectedPoint = new THREE.Points(selectedGeometry, new THREE.PointsMaterial({color:0xffc857, size:0.19, sizeAttenuation:true})); object.add(selectedPoint);
+const grid = new THREE.GridHelper(10, 20, 0x405879, 0x263852); grid.position.y=-1.6; scene.add(grid);
+const axes = new THREE.AxesHelper(1.5); axes.position.set(-2.6,-1.58,-2.6); scene.add(axes);
 
-const selectedPoint = new THREE.Points(
-  selectedGeometry,
-  new THREE.PointsMaterial({
-    color: 0xff5263,
-    size: 0.23,
-    sizeAttenuation: true
-  })
-);
-
-object.add(selectedPoint);
-
-// CUADRÍCULA
-const grid = new THREE.GridHelper(
-  10, 20, 0x47617e, 0x26384d
-);
-
-grid.position.y = -1.5;
-scene.add(grid);
-
-// EJES DE REFERENCIA
-const axes = new THREE.AxesHelper(2);
-scene.add(axes);
-
-// CREAR PRISMA TRIANGULAR
 function rebuild() {
-  const back = vertices.map(v => [
-    v[0],
-    v[1],
-    v[2] - depth
-  ]);
-
-  const front = vertices;
-
-  const A = front[0];
-  const B = front[1];
-  const C = front[2];
-
-  const A2 = back[0];
-  const B2 = back[1];
-  const C2 = back[2];
-
-  // Cada tres puntos forman un triángulo.
-  // Se crean dos caras triangulares y tres caras laterales.
-  const faces = [
-    // Cara frontal
-    A, B, C,
-
-    // Cara trasera con orientación invertida
-    C2, B2, A2,
-
-    // Lateral AB
-    A, A2, B,
-    B, A2, B2,
-
-    // Lateral BC
-    B, B2, C,
-    C, B2, C2,
-
-    // Lateral CA
-    C, C2, A,
-    A, C2, A2
-  ];
-
-  const positions = [];
-
-  faces.forEach(face => {
-    face.forEach(vertex => {
-      positions.push(...vertex);
-    });
+  const facePositions = [];
+  faces.forEach(f => {
+    [0,1,2,0,2,3].forEach(i => facePositions.push(...vertices[f[i]]));
   });
-
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
-
-  geometry.computeVertexNormals();
-
-  // Bordes frontales, traseros y de profundidad
-  const edges = [
-    // Frente
-    ...A, ...B,
-    ...B, ...C,
-    ...C, ...A,
-
-    // Parte trasera
-    ...A2, ...B2,
-    ...B2, ...C2,
-    ...C2, ...A2,
-
-    // Uniones de profundidad
-    ...A, ...A2,
-    ...B, ...B2,
-    ...C, ...C2
-  ];
-
-  edgeGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(edges, 3)
-  );
-
-  pointGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(
-      [...front, ...back].flat(), 3
-    )
-  );
-
-  const i = Number(
-    document.getElementById('vertex').value
-  );
-
-  selectedGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(front[i], 3)
-  );
-
-  geometry.computeBoundingSphere();
-  edgeGeometry.computeBoundingSphere();
-  pointGeometry.computeBoundingSphere();
-  selectedGeometry.computeBoundingSphere();
+  faceGeometry.setAttribute('position', new THREE.Float32BufferAttribute(facePositions,3));
+  faceGeometry.computeVertexNormals();
+  const edgePositions = [];
+  edges.forEach(([a,b]) => edgePositions.push(...vertices[a], ...vertices[b]));
+  edgeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(edgePositions,3));
+  const all = vertices.flat();
+  pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(all,3));
+  const idx = Number(document.querySelector('#vertexSelect').value);
+  selectedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices[idx],3));
+  document.querySelector('#vertexCount').textContent = `${vertices.length} vértices · ${edges.length} aristas`;
 }
-
-// CARGAR COORDENADAS
-function loadCoordinates() {
-  const i = Number(
-    document.getElementById('vertex').value
-  );
-
-  document.getElementById('x').value = vertices[i][0];
-  document.getElementById('y').value = vertices[i][1];
-  document.getElementById('z').value = vertices[i][2];
+function updateSelectionInputs() {
+  const idx = Number(document.querySelector('#vertexSelect').value);
+  ['vx','vy','vz'].forEach((id, axis) => document.getElementById(id).value = vertices[idx][axis]);
+  const option = document.querySelector(`#vertexSelect option[value="${idx}"]`);
+  option.textContent = `Vértice ${idx+1} · (${vertices[idx].map(n=>Number(n.toFixed(2))).join(', ')})`;
 }
-
-document.getElementById('vertex')
-  .addEventListener('change', () => {
-    loadCoordinates();
-    rebuild();
-  });
-
-// MODIFICAR VÉRTICE
-document.getElementById('apply')
-  .addEventListener('click', () => {
-    const i = Number(
-      document.getElementById('vertex').value
-    );
-
-    const coords = ['x', 'y', 'z'].map(id =>
-      Number(document.getElementById(id).value)
-    );
-
-    if (!coords.every(Number.isFinite)) {
-      document.getElementById('status').textContent =
-        'Introduce coordenadas válidas.';
-      return;
-    }
-
-    vertices[i] = coords;
-
-    rebuild();
-    loadCoordinates();
-
-    document.getElementById('status').textContent =
-      'Vértice modificado correctamente.';
-  });
-
-// MODIFICAR GROSOR
-document.getElementById('depth')
-  .addEventListener('input', event => {
-    const value = Number(event.target.value);
-
-    if (!Number.isFinite(value) || value <= 0) {
-      return;
-    }
-
-    depth = Math.min(value, 5);
-    rebuild();
-
-    document.getElementById('status').textContent =
-      'Profundidad actualizada.';
-  });
-
-// RESTAURAR FIGURA
-document.getElementById('reset')
-  .addEventListener('click', () => {
-    vertices = initial.map(v => [...v]);
-    depth = 0.8;
-
-    object.rotation.set(0, 0, 0);
-
-    document.getElementById('depth').value = depth;
-
-    ['rx', 'ry', 'rz'].forEach(id => {
-      document.getElementById(id).value = 0;
-    });
-
-    document.getElementById('vertex').value = '0';
-
-    loadCoordinates();
-    rebuild();
-
-    document.getElementById('status').textContent =
-      'Triángulo 3D restaurado.';
-  });
-
-// ROTACIÓN X, Y, Z
-[['rx', 'x'], ['ry', 'y'], ['rz', 'z']]
-  .forEach(([id, axis]) => {
-    document.getElementById(id)
-      .addEventListener('input', event => {
-        object.rotation[axis] =
-          THREE.MathUtils.degToRad(
-            Number(event.target.value)
-          );
-      });
-  });
-
-// GIRAR CÁMARA CON EL RATÓN
-let dragging = false;
-let oldX = 0;
-let oldY = 0;
-
-let theta = Math.atan2(
-  camera.position.x, camera.position.z
-);
-
-let phi = Math.acos(
-  camera.position.y / camera.position.length()
-);
-
-const target = new THREE.Vector3(0, 0, 0);
-
-canvas.addEventListener('pointerdown', e => {
-  dragging = true;
-  oldX = e.clientX;
-  oldY = e.clientY;
-
-  canvas.setPointerCapture(e.pointerId);
-});
-
-canvas.addEventListener('pointermove', e => {
-  if (!dragging) return;
-
-  theta -= (e.clientX - oldX) * 0.008;
-  phi -= (e.clientY - oldY) * 0.008;
-
-  phi = Math.max(
-    0.15,
-    Math.min(Math.PI - 0.15, phi)
-  );
-
-  oldX = e.clientX;
-  oldY = e.clientY;
-
-  const r = camera.position.distanceTo(target);
-
-  camera.position.set(
-    r * Math.sin(phi) * Math.sin(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.cos(theta)
-  );
-
-  camera.lookAt(target);
-});
-
-canvas.addEventListener('pointerup', () => {
-  dragging = false;
-});
-
-canvas.addEventListener('pointercancel', () => {
-  dragging = false;
-});
-
-// AJUSTAR TAMAÑO
 function resize() {
   const rect = canvas.getBoundingClientRect();
-
   renderer.setSize(rect.width, rect.height, false);
-
   camera.aspect = rect.width / rect.height;
   camera.updateProjectionMatrix();
 }
+document.querySelectorAll('[id^="rot"]').forEach(input => input.addEventListener('input', () => {
+  const axis = input.id.slice(-1).toLowerCase();
+  const deg = Number(input.value);
+  object.rotation[axis] = THREE.MathUtils.degToRad(deg);
+  document.getElementById(input.id+'Val').textContent = `${deg}°`;
+}));
+document.querySelector('#vertexSelect').addEventListener('change', () => { updateSelectionInputs(); rebuild(); });
+document.querySelector('#applyVertex').addEventListener('click', () => {
+  const idx = Number(document.querySelector('#vertexSelect').value);
+  const coords = ['vx','vy','vz'].map(id => Number(document.getElementById(id).value));
+  if (!coords.every(Number.isFinite)) { document.querySelector('#status').textContent = 'Introduce valores numéricos válidos.'; return; }
+  vertices[idx] = coords; rebuild(); updateSelectionInputs();
+  document.querySelector('#status').textContent = `Vértice ${idx+1} actualizado.`;
+});
+document.querySelector('#resetVertex').addEventListener('click', () => {
+  const idx = Number(document.querySelector('#vertexSelect').value);
+  vertices[idx] = [...initial[idx]]; rebuild(); updateSelectionInputs();
+  document.querySelector('#status').textContent = `Vértice ${idx+1} restaurado.`;
+});
+document.querySelector('#resetAll').addEventListener('click', () => {
+  vertices = initial.map(v=>[...v]);
+  ['rotX','rotY','rotZ'].forEach((id,i) => {
+    const val = [25,-25,0][i]; document.getElementById(id).value = val;
+    document.getElementById(id+'Val').textContent = `${val}°`;
+  });
+  object.rotation.set(THREE.MathUtils.degToRad(25),THREE.MathUtils.degToRad(-25),0);
+  document.querySelector('#vertexSelect').value='0';
+  updateSelectionInputs(); rebuild();
+  document.querySelector('#status').textContent = 'Cubo restaurado.';
+});
+let spinning = false;
+document.querySelector('#spin').addEventListener('click', e => {
+  spinning = !spinning; e.currentTarget.textContent = `Giro automático: ${spinning?'encendido':'apagado'}`;
+});
+document.querySelector('#toggleGrid').addEventListener('click', e => {
+  grid.visible = !grid.visible; axes.visible = grid.visible;
+  e.currentTarget.textContent = grid.visible ? 'Ocultar cuadrícula' : 'Mostrar cuadrícula';
+});
 
-window.addEventListener('resize', resize);
-
-// INICIAR
-rebuild();
-loadCoordinates();
-resize();
-
-// ANIMACIÓN
+// Arrastre para orbitar la cámara y rueda para zoom.
+let dragging=false, px=0, py=0, theta=Math.atan2(camera.position.x,camera.position.z), phi=Math.acos(camera.position.y/camera.position.length());
+canvas.addEventListener('pointerdown', e => {dragging=true; px=e.clientX; py=e.clientY; canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove', e => {
+  if(!dragging) return;
+  theta -= (e.clientX-px)*0.008; phi -= (e.clientY-py)*0.008;
+  phi=Math.max(0.15,Math.min(Math.PI-0.15,phi)); px=e.clientX; py=e.clientY;
+  const r=camera.position.length();
+  camera.position.set(r*Math.sin(phi)*Math.sin(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.cos(theta));
+  camera.lookAt(0,0,0);
+});
+canvas.addEventListener('pointerup',()=>dragging=false);
+canvas.addEventListener('pointercancel',()=>dragging=false);
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault(); camera.position.multiplyScalar(e.deltaY>0?1.08:0.92);
+  const r=camera.position.length(); if(r<3) camera.position.setLength(3); if(r>12) camera.position.setLength(12);
+},{passive:false});
+camera.lookAt(0,0,0);
+object.rotation.set(THREE.MathUtils.degToRad(25),THREE.MathUtils.degToRad(-25),0);
+rebuild(); updateSelectionInputs(); resize(); window.addEventListener('resize',resize);
 function animate() {
   requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+  if(spinning) object.rotation.y += 0.008;
+  renderer.render(scene,camera);
 }
-
 animate();
 </script>
-
 </body>
 </html>
-```
