@@ -1,35 +1,326 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Visor 3D - Cubo editable</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffcc;
+        }
+
+        .contenedor {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .visor {
+            flex: 1 1 400px;
+            min-width: 0;
+            text-align: center;
+        }
+
+        #lienzo {
+            display: block;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            margin: auto;
+            background: #0b1220;
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .panel {
+            flex: 1 1 280px;
+            max-width: 380px;
+            padding: 20px;
+            background: #1f2937;
+            border-radius: 10px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #00ffcc;
+            border-bottom: 1px solid #374151;
+            padding-bottom: 8px;
+        }
+
+        .control {
+            margin-bottom: 18px;
+        }
+
+        .etiqueta {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        output {
+            color: #00ffcc;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #00ffcc;
+        }
+
+        select,
+        input[type="number"] {
+            width: 100%;
+            padding: 9px;
+            color: white;
+            background: #111827;
+            border: 1px solid #4b5563;
+            border-radius: 5px;
+        }
+
+        .coordenadas {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .coordenadas label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 5px;
+            background: #00bfa5;
+            color: #07131a;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00ffcc;
+        }
+
+        .secundario {
+            background: #374151;
+            color: white;
+        }
+
+        .secundario:hover {
+            background: #4b5563;
+        }
+
+        #estado {
+            min-height: 18px;
+            color: #86efac;
+            font-size: 13px;
+        }
+
+        .ayuda {
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .panel {
+                flex-basis: 100%;
+                max-width: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div>
-        <h1>Titulo principal</h1>
+
+    <h1>Visor 3D: Cubo editable</h1>
+
+    <p style="text-align:center">
+        Rota el cubo y modifica sus vértices en tiempo real.
+    </p>
+
+    <div class="contenedor">
+
+        <div class="visor">
+            <canvas id="lienzo" width="600" height="600"></canvas>
+
+            <p class="ayuda">
+                Haz clic cerca de un vértice para seleccionarlo.
+                También puedes arrastrar el ratón para rotar la vista.
+            </p>
+        </div>
+
+        <div class="panel">
+
+            <h2>Rotación</h2>
+
+            <div class="control">
+                <div class="etiqueta">
+                    <label for="rotX">Rotación X</label>
+                    <output id="valorX">25°</output>
+                </div>
+                <input id="rotX" type="range"
+                    min="-180" max="180" value="25">
+            </div>
+
+            <div class="control">
+                <div class="etiqueta">
+                    <label for="rotY">Rotación Y</label>
+                    <output id="valorY">30°</output>
+                </div>
+                <input id="rotY" type="range"
+                    min="-180" max="180" value="30">
+            </div>
+
+            <div class="control">
+                <div class="etiqueta">
+                    <label for="rotZ">Rotación Z</label>
+                    <output id="valorZ">0°</output>
+                </div>
+                <input id="rotZ" type="range"
+                    min="-180" max="180" value="0">
+            </div>
+
+            <div class="control">
+                <div class="etiqueta">
+                    <label for="velocidad">Velocidad automática</label>
+                    <output id="valorVelocidad">1</output>
+                </div>
+                <input id="velocidad" type="range"
+                    min="0" max="5" step="0.1" value="1">
+            </div>
+
+            <button id="pausar">Pausar rotación automática</button>
+
+            <h2>Editar vértices</h2>
+
+            <div class="control">
+                <label for="seleccion">Vértice seleccionado</label>
+                <select id="seleccion">
+                    <option value="0">Vértice 1</option>
+                    <option value="1">Vértice 2</option>
+                    <option value="2">Vértice 3</option>
+                    <option value="3">Vértice 4</option>
+                    <option value="4">Vértice 5</option>
+                    <option value="5">Vértice 6</option>
+                    <option value="6">Vértice 7</option>
+                    <option value="7">Vértice 8</option>
+                </select>
+
+                <div class="coordenadas">
+                    <div>
+                        <label for="coordX">X</label>
+                        <input id="coordX" type="number"
+                            step="0.1">
+                    </div>
+
+                    <div>
+                        <label for="coordY">Y</label>
+                        <input id="coordY" type="number"
+                            step="0.1">
+                    </div>
+
+                    <div>
+                        <label for="coordZ">Z</label>
+                        <input id="coordZ" type="number"
+                            step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <button id="aplicar">Aplicar coordenadas</button>
+            <button id="restaurarVertice" class="secundario">
+                Restaurar vértice seleccionado
+            </button>
+
+            <button id="reiniciar" class="secundario">
+                Reiniciar cubo completo
+            </button>
+
+            <p id="estado">Visor listo.</p>
+
+        </div>
     </div>
 
-    <canvas id="lienzo" width="600" height="600" />
-
     <script>
+        // ====================================
+        // 1. CONFIGURACIÓN DEL CANVAS
+        // ====================================
+
         const canvas = document.getElementById("lienzo");
         const context = canvas.getContext("2d");
-        let angulo = 0;
 
-        const vertices = [
+        // Ángulos en radianes
+        let anguloX = 25 * Math.PI / 180;
+        let anguloY = 30 * Math.PI / 180;
+        let anguloZ = 0;
+
+        let velocidad = 1;
+        let animacionActiva = true;
+        let arrastrando = false;
+
+        let ultimoX = 0;
+        let ultimoY = 0;
+
+        let verticesSeleccionado = 0;
+        let puntosProyectados = [];
+
+        const distanciaCamara = 5;
+        const zoom = 300;
+
+        // ====================================
+        // 2. VÉRTICES ORIGINALES
+        // ====================================
+
+        const verticesOriginales = [
             { x: -1, y: -1, z: -1 },
-            { x: 1, y: -1, z: -1 },
-            { x: 1, y: 1, z: -1 },
-            { x: -1, y: 1, z: -1 },
+            { x:  1, y: -1, z: -1 },
+            { x:  1, y:  1, z: -1 },
+            { x: -1, y:  1, z: -1 },
 
-            { x: -1, y: -1, z: 1 },
-            { x: 1, y: -1, z: 1 },
-            { x: 1, y: 1, z: 1 },
-            { x: -1, y: 1, z: 1 },
+            { x: -1, y: -1, z:  1 },
+            { x:  1, y: -1, z:  1 },
+            { x:  1, y:  1, z:  1 },
+            { x: -1, y:  1, z:  1 }
         ];
+
+        let vertices = verticesOriginales.map(v => ({ ...v }));
+
+        // ====================================
+        // 3. ARISTAS DEL CUBO
+        // ====================================
 
         const aristas = [
             [0, 1], [1, 2], [2, 3], [3, 0],
@@ -37,62 +328,499 @@
             [0, 4], [1, 5], [2, 6], [3, 7]
         ];
 
-        function rotarY(p, a) {
-            const cos = Math.cos(a);
-            const sin = Math.sin(a);
-            return { x: p.x * cos + p.z * sin, y: p.y, z: -p.x * sin + p.z * cos };
-        }
+        // ====================================
+        // 4. ROTACIÓN EN EL EJE X
+        // ====================================
 
         function rotarX(p, a) {
             const cos = Math.cos(a);
             const sin = Math.sin(a);
-            return { x: p.x, y: p.y * cos - p.z * sin, z: p.y * sin + p.z * cos };
+
+            return {
+                x: p.x,
+                y: p.y * cos - p.z * sin,
+                z: p.y * sin + p.z * cos
+            };
         }
+
+        // ====================================
+        // 5. ROTACIÓN EN EL EJE Y
+        // ====================================
+
+        function rotarY(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+
+            return {
+                x: p.x * cos + p.z * sin,
+                y: p.y,
+                z: -p.x * sin + p.z * cos
+            };
+        }
+
+        // ====================================
+        // 6. ROTACIÓN EN EL EJE Z
+        // ====================================
+
+        function rotarZ(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+
+            return {
+                x: p.x * cos - p.y * sin,
+                y: p.x * sin + p.y * cos,
+                z: p.z
+            };
+        }
+
+        // Aplicar las tres rotaciones
+        function transformar(p) {
+            let resultado = rotarX(p, anguloX);
+            resultado = rotarY(resultado, anguloY);
+            resultado = rotarZ(resultado, anguloZ);
+
+            return resultado;
+        }
+
+        // ====================================
+        // 7. PROYECCIÓN 3D A 2D
+        // ====================================
 
         function proyectar(p) {
-            const distancia = 4;
-            const zoom = 300;
-            const z = p.z + distancia;
-            const x2d = (p.x / z) * zoom + canvas.width / 2;
-            const y2d = (-p.y / z) * zoom + canvas.height / 2;
-            return { x: x2d, y: y2d };
+            const z = p.z + distanciaCamara;
+
+            // Evitar una división por cero
+            const zSeguro = Math.max(0.1, z);
+
+            const factor = zoom / zSeguro;
+
+            return {
+                x: p.x * factor + canvas.width / 2,
+                y: -p.y * factor + canvas.height / 2,
+                z: p.z
+            };
         }
 
-        function dibujar() {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+        // ====================================
+        // 8. ACTUALIZAR CONTROLES
+        // ====================================
 
-            const puntos = [];
+        function actualizarControles() {
+            const v = vertices[verticesSeleccionado];
+
+            document.getElementById("coordX").value =
+                Number(v.x.toFixed(2));
+
+            document.getElementById("coordY").value =
+                Number(v.y.toFixed(2));
+
+            document.getElementById("coordZ").value =
+                Number(v.z.toFixed(2));
+
+            document.getElementById("seleccion").value =
+                verticesSeleccionado;
+        }
+
+        // ====================================
+        // 9. DIBUJAR LA ESCENA
+        // ====================================
+
+        function dibujar() {
+            context.clearRect(
+                0, 0, canvas.width, canvas.height
+            );
+
+            // Fondo
+            context.fillStyle = "#0b1220";
+            context.fillRect(
+                0, 0, canvas.width, canvas.height
+            );
+
+            // Dibujar ejes de referencia
+            dibujarEjes();
+
+            puntosProyectados = [];
+
+            // Transformar todos los vértices
             for (let i = 0; i < vertices.length; i++) {
-                let p = rotarY(vertices[i], angulo);
-                p = rotarX(p, angulo * 0.5);
-                puntos.push(proyectar(p));
+                const transformado = transformar(vertices[i]);
+                puntosProyectados.push(proyectar(transformado));
             }
 
-            context.strokeStyle = "#00ffcc";
+            // Dibujar aristas
             context.lineWidth = 2;
+            context.strokeStyle = "#00ffcc";
+
             for (let i = 0; i < aristas.length; i++) {
-                const a = puntos[aristas[i][0]];
-                const b = puntos[aristas[i][1]];
+                const a = puntosProyectados[aristas[i][0]];
+                const b = puntosProyectados[aristas[i][1]];
+
                 context.beginPath();
                 context.moveTo(a.x, a.y);
                 context.lineTo(b.x, b.y);
                 context.stroke();
             }
 
-            context.fillStyle = "#ff0066";
-            for (let i = 0; i < puntos.length; i++) {
-                context.beginPath();
-                context.arc(puntos[i].x, puntos[i].y, 5, 0, Math.PI * 2);
-                context.fill();
-            }
+            // Dibujar los vértices
+            for (let i = 0; i < puntosProyectados.length; i++) {
+                const p = puntosProyectados[i];
 
-            angulo += 0.01;
-            requestAnimationFrame(dibujar);
+                context.beginPath();
+
+                context.arc(
+                    p.x,
+                    p.y,
+                    i === verticesSeleccionado ? 8 : 5,
+                    0,
+                    Math.PI * 2
+                );
+
+                context.fillStyle =
+                    i === verticesSeleccionado
+                    ? "#ffffff"
+                    : "#ff0066";
+
+                context.fill();
+
+                // Etiqueta de cada vértice
+                context.fillStyle = "#ffffff";
+                context.font = "14px Arial";
+
+                context.fillText(
+                    "V" + (i + 1),
+                    p.x + 9,
+                    p.y - 8
+                );
+            }
         }
 
+        // ====================================
+        // 10. EJES DE REFERENCIA
+        // ====================================
 
-        dibujar();
+        function dibujarEjes() {
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+
+            const ejes = [
+                {
+                    nombre: "X",
+                    color: "#ff5555",
+                    punto: { x: 1.3, y: 0, z: 0 }
+                },
+                {
+                    nombre: "Y",
+                    color: "#55ff77",
+                    punto: { x: 0, y: 1.3, z: 0 }
+                },
+                {
+                    nombre: "Z",
+                    color: "#5599ff",
+                    punto: { x: 0, y: 0, z: 1.3 }
+                }
+            ];
+
+            ejes.forEach(eje => {
+                const extremo = proyectar(transformar(eje.punto));
+
+                context.beginPath();
+                context.moveTo(centroX, centroY);
+                context.lineTo(extremo.x, extremo.y);
+
+                context.strokeStyle = eje.color;
+                context.lineWidth = 2;
+                context.stroke();
+
+                context.fillStyle = eje.color;
+                context.font = "bold 15px Arial";
+
+                context.fillText(
+                    eje.nombre,
+                    extremo.x + 5,
+                    extremo.y
+                );
+            });
+        }
+
+        // ====================================
+        // 11. ROTACIÓN MANUAL CON DESLIZADORES
+        // ====================================
+
+        document.getElementById("rotX")
+            .addEventListener("input", function () {
+                anguloX = Number(this.value) * Math.PI / 180;
+
+                document.getElementById("valorX").textContent =
+                    this.value + "°";
+
+                dibujar();
+            });
+
+        document.getElementById("rotY")
+            .addEventListener("input", function () {
+                anguloY = Number(this.value) * Math.PI / 180;
+
+                document.getElementById("valorY").textContent =
+                    this.value + "°";
+
+                dibujar();
+            });
+
+        document.getElementById("rotZ")
+            .addEventListener("input", function () {
+                anguloZ = Number(this.value) * Math.PI / 180;
+
+                document.getElementById("valorZ").textContent =
+                    this.value + "°";
+
+                dibujar();
+            });
+
+        // ====================================
+        // 12. VELOCIDAD DE ROTACIÓN
+        // ====================================
+
+        document.getElementById("velocidad")
+            .addEventListener("input", function () {
+                velocidad = Number(this.value);
+
+                document.getElementById("valorVelocidad").textContent =
+                    velocidad.toFixed(1);
+            });
+
+        // ====================================
+        // 13. PAUSAR Y REANUDAR
+        // ====================================
+
+        document.getElementById("pausar")
+            .addEventListener("click", function () {
+                animacionActiva = !animacionActiva;
+
+                this.textContent = animacionActiva
+                    ? "Pausar rotación automática"
+                    : "Reanudar rotación automática";
+            });
+
+        // ====================================
+        // 14. SELECCIONAR VÉRTICE
+        // ====================================
+
+        document.getElementById("seleccion")
+            .addEventListener("change", function () {
+                verticesSeleccionado = Number(this.value);
+
+                actualizarControles();
+                dibujar();
+            });
+
+        // ====================================
+        // 15. MODIFICAR COORDENADAS
+        // ====================================
+
+        document.getElementById("aplicar")
+            .addEventListener("click", function () {
+                const x = document.getElementById("coordX").value;
+                const y = document.getElementById("coordY").value;
+                const z = document.getElementById("coordZ").value;
+
+                if (
+                    x.trim() === "" ||
+                    y.trim() === "" ||
+                    z.trim() === "" ||
+                    ![Number(x), Number(y), Number(z)].every(Number.isFinite)
+                ) {
+                    document.getElementById("estado").textContent =
+                        "Introduce coordenadas numéricas válidas.";
+                    return;
+                }
+
+                vertices[verticesSeleccionado] = {
+                    x: Number(x),
+                    y: Number(y),
+                    z: Number(z)
+                };
+
+                document.getElementById("estado").textContent =
+                    "Vértice " + (verticesSeleccionado + 1) +
+                    " actualizado correctamente.";
+
+                dibujar();
+            });
+
+        // ====================================
+        // 16. RESTAURAR VÉRTICE
+        // ====================================
+
+        document.getElementById("restaurarVertice")
+            .addEventListener("click", function () {
+                vertices[verticesSeleccionado] = {
+                    ...verticesOriginales[verticesSeleccionado]
+                };
+
+                actualizarControles();
+
+                document.getElementById("estado").textContent =
+                    "Vértice restaurado.";
+
+                dibujar();
+            });
+
+        // ====================================
+        // 17. REINICIAR CUBO
+        // ====================================
+
+        document.getElementById("reiniciar")
+            .addEventListener("click", function () {
+                vertices = verticesOriginales.map(v => ({ ...v }));
+
+                anguloX = 25 * Math.PI / 180;
+                anguloY = 30 * Math.PI / 180;
+                anguloZ = 0;
+
+                document.getElementById("rotX").value = 25;
+                document.getElementById("rotY").value = 30;
+                document.getElementById("rotZ").value = 0;
+
+                document.getElementById("valorX").textContent = "25°";
+                document.getElementById("valorY").textContent = "30°";
+                document.getElementById("valorZ").textContent = "0°";
+
+                verticesSeleccionado = 0;
+
+                actualizarControles();
+
+                document.getElementById("estado").textContent =
+                    "Cubo reiniciado.";
+
+                dibujar();
+            });
+
+        // ====================================
+        // 18. SELECCIONAR VÉRTICE CON EL RATÓN
+        // ====================================
+
+        function obtenerPosicionCanvas(event) {
+            const rect = canvas.getBoundingClientRect();
+
+            return {
+                x: (event.clientX - rect.left) *
+                    canvas.width / rect.width,
+
+                y: (event.clientY - rect.top) *
+                    canvas.height / rect.height
+            };
+        }
+
+        canvas.addEventListener("pointerdown", function (event) {
+            const pos = obtenerPosicionCanvas(event);
+
+            let cercano = -1;
+            let distanciaMinima = 18;
+
+            puntosProyectados.forEach((p, i) => {
+                const distancia = Math.hypot(
+                    p.x - pos.x,
+                    p.y - pos.y
+                );
+
+                if (distancia < distanciaMinima) {
+                    distanciaMinima = distancia;
+                    cercano = i;
+                }
+            });
+
+            if (cercano !== -1) {
+                verticesSeleccionado = cercano;
+
+                actualizarControles();
+
+                document.getElementById("estado").textContent =
+                    "Seleccionaste el vértice " +
+                    (cercano + 1) + ".";
+
+                dibujar();
+            } else {
+                arrastrando = true;
+                ultimoX = event.clientX;
+                ultimoY = event.clientY;
+                canvas.setPointerCapture(event.pointerId);
+            }
+        });
+
+        // ====================================
+        // 19. GIRAR CON ARRASTRE
+        // ====================================
+
+        canvas.addEventListener("pointermove", function (event) {
+            if (!arrastrando) return;
+
+            const dx = event.clientX - ultimoX;
+            const dy = event.clientY - ultimoY;
+
+            anguloY += dx * 0.01;
+            anguloX += dy * 0.01;
+
+            ultimoX = event.clientX;
+            ultimoY = event.clientY;
+
+            sincronizarDeslizadores();
+            dibujar();
+        });
+
+        canvas.addEventListener("pointerup", function () {
+            arrastrando = false;
+        });
+
+        canvas.addEventListener("pointercancel", function () {
+            arrastrando = false;
+        });
+
+        // Actualizar los controles tras arrastrar
+        function sincronizarDeslizadores() {
+            const gradosX = Math.round(anguloX * 180 / Math.PI);
+            const gradosY = Math.round(anguloY * 180 / Math.PI);
+            const gradosZ = Math.round(anguloZ * 180 / Math.PI);
+
+            document.getElementById("rotX").value = gradosX;
+            document.getElementById("rotY").value = gradosY;
+            document.getElementById("rotZ").value = gradosZ;
+
+            document.getElementById("valorX").textContent =
+                gradosX + "°";
+
+            document.getElementById("valorY").textContent =
+                gradosY + "°";
+
+            document.getElementById("valorZ").textContent =
+                gradosZ + "°";
+        }
+
+        // ====================================
+        // 20. ANIMACIÓN PRINCIPAL
+        // ====================================
+
+        function dibujarAnimacion() {
+            if (animacionActiva && !arrastrando) {
+                anguloY += 0.005 * velocidad;
+
+                // Mantener los ángulos dentro del rango
+                // de los deslizadores.
+                if (anguloY > Math.PI) {
+                    anguloY -= Math.PI * 2;
+                }
+
+                sincronizarDeslizadores();
+            }
+
+            dibujar();
+
+            requestAnimationFrame(dibujarAnimacion);
+        }
+
+        // INICIAR VISOR
+        actualizarControles();
+        dibujarAnimacion();
     </script>
-</body>
 
+</body>
 </html>
