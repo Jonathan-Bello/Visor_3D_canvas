@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Estrella 3D</title>
+	<style>
+		* { box-sizing: border-box; }
+		html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+		body { background: radial-gradient(ellipse at center, #17234a, #080d1d 58%, #03050c); color: white; font: 14px system-ui, sans-serif; }
+		canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+		header { position: fixed; top: 20px; left: 24px; pointer-events: none; text-shadow: 0 2px 12px #000; }
+		h1 { margin: 0; font-size: clamp(20px, 3vw, 30px); letter-spacing: .14em; }
+		p { margin: 5px 0; color: #bcc8ee; }
+	</style>
+</head>
+<body>
+	<header><h1>ESTRELLA 3D</h1><p>Arrastra para girar · usa la rueda para acercar</p></header>
+	<canvas id="canvas" aria-label="Estrella tridimensional interactiva"></canvas>
+	<script>
+		const canvas = document.querySelector('#canvas');
+		const ctx = canvas.getContext('2d');
+		let width, height, rotX = -.2, rotY = .25, zoom = 1, drag = false, lastX, lastY;
+		const stars = Array.from({length: 140}, () => ({x: Math.random(), y: Math.random(), r: Math.random()*1.3+.3, phase: Math.random()*6}));
+		const outline = Array.from({length: 10}, (_, i) => {
+			const angle = -Math.PI/2 + i*Math.PI/5, radius = i%2 ? .56 : 1.32;
+			return [Math.cos(angle)*radius, Math.sin(angle)*radius];
+		});
+		function resize() {
+			const dpr = Math.min(devicePixelRatio || 1, 2);
+			width = innerWidth; height = innerHeight;
+			canvas.width = width*dpr; canvas.height = height*dpr;
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		}
+		addEventListener('resize', resize); resize();
+		function project(x, y, z) {
+			const cy=Math.cos(rotY), sy=Math.sin(rotY), cx=Math.cos(rotX), sx=Math.sin(rotX);
+			const rx=x*cy-z*sy, rz=x*sy+z*cy, ry=y*cx-rz*sx, depth=y*sx+rz*cx;
+			const scale=Math.min(width,height)*.29*zoom*4/(4+depth);
+			return [width/2+rx*scale, height/2+ry*scale, depth];
+		}
+		function render(time) {
+			ctx.clearRect(0,0,width,height);
+			for (const s of stars) {
+				ctx.globalAlpha=.25+.45*(Math.sin(time*.001+s.phase)+1)/2;
+				ctx.fillStyle='#dce6ff'; ctx.beginPath(); ctx.arc(s.x*width,s.y*height,s.r,0,Math.PI*2); ctx.fill();
+			}
+			ctx.globalAlpha=1;
+			// Punta frontal y trasera, con caras triangulares y laterales para dar volumen.
+			const front=[0,0,.48], back=[0,0,-.48], faces=[];
+			for(let i=0;i<10;i++) {
+				const j=(i+1)%10, a=[...outline[i],0], b=[...outline[j],0];
+				faces.push({v:[front,a,b],color:'#ffd44d',glow:'#ffe477'});
+				faces.push({v:[back,b,a],color:'#bd8b27',glow:'#e3ae3b'});
+				faces.push({v:[[a[0],a[1],-.48],[b[0],b[1],-.48],b,a],color:'#344c99',glow:'#829cff'});
+			}
+			const drawn=faces.map(f=>({...f,p:f.v.map(v=>project(...v))})).sort((a,b)=>b.p.reduce((n,p)=>n+p[2],0)-a.p.reduce((n,p)=>n+p[2],0));
+			for(const f of drawn) {
+				ctx.beginPath(); ctx.moveTo(f.p[0][0],f.p[0][1]);
+				f.p.slice(1).forEach(p=>ctx.lineTo(p[0],p[1])); ctx.closePath();
+				ctx.fillStyle=f.color; ctx.shadowColor=f.glow; ctx.shadowBlur=17; ctx.fill(); ctx.shadowBlur=0;
+				ctx.strokeStyle='rgba(255,239,175,.6)'; ctx.lineWidth=1; ctx.stroke();
+			}
+			requestAnimationFrame(render);
+		}
+		requestAnimationFrame(render);
+		canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);});
+		canvas.addEventListener('pointermove',e=>{if(!drag)return;rotY+=(e.clientX-lastX)*.008;rotX+=(e.clientY-lastY)*.008;lastX=e.clientX;lastY=e.clientY;});
+		canvas.addEventListener('pointerup',()=>drag=false);
+		canvas.addEventListener('pointercancel',()=>drag=false);
+		canvas.addEventListener('wheel',e=>{zoom=Math.max(.55,Math.min(1.8,zoom-e.deltaY*.001));e.preventDefault();},{passive:false});
+	</script>
+</body>
+</html>
