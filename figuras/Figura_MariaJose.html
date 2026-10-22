@@ -1,10 +1,10 @@
-
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Triángulo 3D</title>
+<title>Triángulo 3D editable</title>
 
 <style>
 body {
@@ -52,7 +52,7 @@ label {
   gap: 5px;
 }
 
-input {
+input, select {
   width: 90px;
   padding: 7px;
   border-radius: 5px;
@@ -83,6 +83,7 @@ p {
 <canvas id="scene"></canvas>
 
 <div class="controls">
+
   <h2>Seleccionar vértice</h2>
 
   <select id="vertex">
@@ -108,6 +109,15 @@ p {
   <button id="apply">Modificar vértice</button>
   <button id="reset">Restaurar triángulo</button>
 
+  <h2>Grosor de la figura</h2>
+
+  <div class="row">
+    <label>Profundidad
+      <input id="depth" type="number"
+        min="0.1" max="5" step="0.1" value="0.8">
+    </label>
+  </div>
+
   <h2>Rotación</h2>
 
   <div class="row">
@@ -128,6 +138,7 @@ p {
   </div>
 
   <p id="status">Selecciona un vértice para editarlo.</p>
+
 </div>
 
 <script type="module">
@@ -146,6 +157,10 @@ renderer.setPixelRatio(
   Math.min(window.devicePixelRatio, 2)
 );
 
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101827);
 
@@ -156,49 +171,60 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(4, 3, 6);
 camera.lookAt(0, 0, 0);
 
-// LUCES
+// ILUMINACIÓN
 scene.add(
-  new THREE.AmbientLight(0xffffff, 1.8)
+  new THREE.AmbientLight(0xffffff, 1.2)
 );
 
 const light = new THREE.DirectionalLight(
-  0xffffff, 2
+  0xffffff, 3
 );
 
-light.position.set(4, 5, 6);
+light.position.set(4, 6, 5);
 scene.add(light);
+
+// LUZ ADICIONAL PARA ILUMINAR LOS LADOS
+const fillLight = new THREE.DirectionalLight(
+  0x78bfff, 1.5
+);
+
+fillLight.position.set(-4, 2, -5);
+scene.add(fillLight);
 
 // VÉRTICES INICIALES
 const initial = [
-  [-1, -1, 0],  // A
-  [ 1, -1, 0],  // B
-  [ 0,  1, 0]   // C
+  [-1, -1, 0],
+  [ 1, -1, 0],
+  [ 0,  1, 0]
 ];
 
 let vertices = initial.map(v => [...v]);
 
-// OBJETO 3D
+let depth = 0.8;
+
+// GRUPO 3D
 const object = new THREE.Group();
 scene.add(object);
 
-// TRIÁNGULO CON CARA
+// GEOMETRÍA CON VOLUMEN
 const geometry = new THREE.BufferGeometry();
 
 const material = new THREE.MeshStandardMaterial({
   color: 0x16c7e8,
   side: THREE.DoubleSide,
-  transparent: true,
-  opacity: 0.65,
-  roughness: 0.4
+  roughness: 0.32,
+  metalness: 0.12,
+  flatShading: true
 });
 
-const triangle = new THREE.Mesh(
-  geometry, material
-);
+const solid = new THREE.Mesh(geometry, material);
 
-object.add(triangle);
+solid.castShadow = true;
+solid.receiveShadow = true;
 
-// ARISTAS
+object.add(solid);
+
+// BORDES BLANCOS
 const edgeGeometry = new THREE.BufferGeometry();
 
 const edgeLines = new THREE.LineSegments(
@@ -210,27 +236,29 @@ const edgeLines = new THREE.LineSegments(
 
 object.add(edgeLines);
 
-// PUNTOS
+// PUNTOS DE LOS VÉRTICES
 const pointGeometry = new THREE.BufferGeometry();
 
 const pointCloud = new THREE.Points(
   pointGeometry,
   new THREE.PointsMaterial({
     color: 0xffd166,
-    size: 0.16
+    size: 0.14,
+    sizeAttenuation: true
   })
 );
 
 object.add(pointCloud);
 
-// PUNTO SELECCIONADO
+// VÉRTICE SELECCIONADO
 const selectedGeometry = new THREE.BufferGeometry();
 
 const selectedPoint = new THREE.Points(
   selectedGeometry,
   new THREE.PointsMaterial({
     color: 0xff5263,
-    size: 0.24
+    size: 0.23,
+    sizeAttenuation: true
   })
 );
 
@@ -244,22 +272,81 @@ const grid = new THREE.GridHelper(
 grid.position.y = -1.5;
 scene.add(grid);
 
-// ACTUALIZAR GEOMETRÍA
+// EJES DE REFERENCIA
+const axes = new THREE.AxesHelper(2);
+scene.add(axes);
+
+// CREAR PRISMA TRIANGULAR
 function rebuild() {
+  const back = vertices.map(v => [
+    v[0],
+    v[1],
+    v[2] - depth
+  ]);
+
+  const front = vertices;
+
+  const A = front[0];
+  const B = front[1];
+  const C = front[2];
+
+  const A2 = back[0];
+  const B2 = back[1];
+  const C2 = back[2];
+
+  // Cada tres puntos forman un triángulo.
+  // Se crean dos caras triangulares y tres caras laterales.
+  const faces = [
+    // Cara frontal
+    A, B, C,
+
+    // Cara trasera con orientación invertida
+    C2, B2, A2,
+
+    // Lateral AB
+    A, A2, B,
+    B, A2, B2,
+
+    // Lateral BC
+    B, B2, C,
+    C, B2, C2,
+
+    // Lateral CA
+    C, C2, A,
+    A, C2, A2
+  ];
+
+  const positions = [];
+
+  faces.forEach(face => {
+    face.forEach(vertex => {
+      positions.push(...vertex);
+    });
+  });
+
   geometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(
-      vertices.flat(), 3
-    )
+    new THREE.Float32BufferAttribute(positions, 3)
   );
 
   geometry.computeVertexNormals();
 
-  // Tres aristas que unen A, B y C
+  // Bordes frontales, traseros y de profundidad
   const edges = [
-    ...vertices[0], ...vertices[1],
-    ...vertices[1], ...vertices[2],
-    ...vertices[2], ...vertices[0]
+    // Frente
+    ...A, ...B,
+    ...B, ...C,
+    ...C, ...A,
+
+    // Parte trasera
+    ...A2, ...B2,
+    ...B2, ...C2,
+    ...C2, ...A2,
+
+    // Uniones de profundidad
+    ...A, ...A2,
+    ...B, ...B2,
+    ...C, ...C2
   ];
 
   edgeGeometry.setAttribute(
@@ -270,7 +357,7 @@ function rebuild() {
   pointGeometry.setAttribute(
     'position',
     new THREE.Float32BufferAttribute(
-      vertices.flat(), 3
+      [...front, ...back].flat(), 3
     )
   );
 
@@ -280,13 +367,16 @@ function rebuild() {
 
   selectedGeometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(
-      vertices[i], 3
-    )
+    new THREE.Float32BufferAttribute(front[i], 3)
   );
+
+  geometry.computeBoundingSphere();
+  edgeGeometry.computeBoundingSphere();
+  pointGeometry.computeBoundingSphere();
+  selectedGeometry.computeBoundingSphere();
 }
 
-// ACTUALIZAR COORDENADAS
+// CARGAR COORDENADAS
 function loadCoordinates() {
   const i = Number(
     document.getElementById('vertex').value
@@ -321,6 +411,7 @@ document.getElementById('apply')
     }
 
     vertices[i] = coords;
+
     rebuild();
     loadCoordinates();
 
@@ -328,12 +419,31 @@ document.getElementById('apply')
       'Vértice modificado correctamente.';
   });
 
-// RESTAURAR
+// MODIFICAR GROSOR
+document.getElementById('depth')
+  .addEventListener('input', event => {
+    const value = Number(event.target.value);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    depth = Math.min(value, 5);
+    rebuild();
+
+    document.getElementById('status').textContent =
+      'Profundidad actualizada.';
+  });
+
+// RESTAURAR FIGURA
 document.getElementById('reset')
   .addEventListener('click', () => {
     vertices = initial.map(v => [...v]);
+    depth = 0.8;
 
     object.rotation.set(0, 0, 0);
+
+    document.getElementById('depth').value = depth;
 
     ['rx', 'ry', 'rz'].forEach(id => {
       document.getElementById(id).value = 0;
@@ -345,7 +455,7 @@ document.getElementById('reset')
     rebuild();
 
     document.getElementById('status').textContent =
-      'Triángulo restaurado.';
+      'Triángulo 3D restaurado.';
   });
 
 // ROTACIÓN X, Y, Z
@@ -360,7 +470,7 @@ document.getElementById('reset')
       });
   });
 
-// GIRAR LA CÁMARA CON EL RATÓN
+// GIRAR CÁMARA CON EL RATÓN
 let dragging = false;
 let oldX = 0;
 let oldY = 0;
@@ -373,10 +483,13 @@ let phi = Math.acos(
   camera.position.y / camera.position.length()
 );
 
+const target = new THREE.Vector3(0, 0, 0);
+
 canvas.addEventListener('pointerdown', e => {
   dragging = true;
   oldX = e.clientX;
   oldY = e.clientY;
+
   canvas.setPointerCapture(e.pointerId);
 });
 
@@ -386,12 +499,15 @@ canvas.addEventListener('pointermove', e => {
   theta -= (e.clientX - oldX) * 0.008;
   phi -= (e.clientY - oldY) * 0.008;
 
-  phi = Math.max(0.15, Math.min(Math.PI - 0.15, phi));
+  phi = Math.max(
+    0.15,
+    Math.min(Math.PI - 0.15, phi)
+  );
 
   oldX = e.clientX;
   oldY = e.clientY;
 
-  const r = camera.position.length();
+  const r = camera.position.distanceTo(target);
 
   camera.position.set(
     r * Math.sin(phi) * Math.sin(theta),
@@ -399,7 +515,7 @@ canvas.addEventListener('pointermove', e => {
     r * Math.sin(phi) * Math.cos(theta)
   );
 
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(target);
 });
 
 canvas.addEventListener('pointerup', () => {
@@ -438,3 +554,4 @@ animate();
 
 </body>
 </html>
+```
