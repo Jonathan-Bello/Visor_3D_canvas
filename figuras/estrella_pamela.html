@@ -1,0 +1,148 @@
+!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estrella 3D chida</title>
+</head>
+
+<body>
+    <div>
+        <h1>Estrella 3D</h1>
+    </div>
+
+    <canvas id="lienzo" width="600" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("lienzo");
+        const context = canvas.getContext("2d");
+        let angulo = 0;
+
+        const vertices = [
+            // Punta superior
+            { x: 0, y: 1.5, z: 0 },
+
+            // Puntas exteriores
+            { x: -1.4, y: 0.5, z: 0 },
+            { x: -0.9, y: -1.2, z: 0 },
+            { x: 0.9, y: -1.2, z: 0 },
+            { x: 1.4, y: 0.5, z: 0 },
+
+            // Vértices interiores
+            { x: -0.5, y: 0.4, z: 0 },
+            { x: -0.3, y: -0.4, z: 0 },
+            { x: 0.3, y: -0.4, z: 0 },
+            { x: 0.5, y: 0.4, z: 0 },
+
+            // Puntos de profundidad
+            { x: 0, y: 1.5, z: 0.8 },
+            { x: -1.4, y: 0.5, z: 0.8 },
+            { x: -0.9, y: -1.2, z: 0.8 },
+            { x: 0.9, y: -1.2, z: 0.8 },
+            { x: 1.4, y: 0.5, z: 0.8 },
+            { x: -0.5, y: 0.4, z: 0.8 },
+            { x: -0.3, y: -0.4, z: 0.8 },
+            { x: 0.3, y: -0.4, z: 0.8 },
+            { x: 0.5, y: 0.4, z: 0.8 }
+        ];
+
+        const aristas = [
+            // Contorno de la estrella del frente
+            [0, 5], [5, 1], [1, 6], [6, 2],
+            [2, 7], [7, 3], [3, 8], [8, 4],
+            [4, 5], [8, 0],
+
+            // Contorno de la estrella de atrás
+            [9, 14], [14, 10], [10, 15], [15, 11],
+            [11, 16], [16, 12], [12, 17], [17, 13],
+            [13, 14], [17, 9],
+
+            // Uniones para dar profundidad
+            [0, 9], [1, 10], [2, 11], [3, 12],
+            [4, 13], [5, 14], [6, 15],
+            [7, 16], [8, 17]
+        ];
+
+        function rotarY(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+
+            return {
+                x: p.x * cos + p.z * sin,
+                y: p.y,
+                z: -p.x * sin + p.z * cos
+            };
+        }
+
+        function rotarX(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+
+            return {
+                x: p.x,
+                y: p.y * cos - p.z * sin,
+                z: p.y * sin + p.z * cos
+            };
+        }
+
+        function proyectar(p) {
+            const distancia = 4;
+            const zoom = 180;
+            const z = p.z + distancia;
+
+            const x2d = (p.x / z) * zoom + canvas.width / 2;
+            const y2d = (-p.y / z) * zoom + canvas.height / 2;
+
+            return { x: x2d, y: y2d };
+        }
+
+        function dibujar() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            const puntos = [];
+
+            for (let i = 0; i < vertices.length; i++) {
+                let p = rotarY(vertices[i], angulo);
+                p = rotarX(p, angulo * 0.5);
+
+                puntos.push(proyectar(p));
+            }
+
+            context.strokeStyle = "#00ffcc";
+            context.lineWidth = 2;
+
+            for (let i = 0; i < aristas.length; i++) {
+                const a = puntos[aristas[i][0]];
+                const b = puntos[aristas[i][1]];
+
+                context.beginPath();
+                context.moveTo(a.x, a.y);
+                context.lineTo(b.x, b.y);
+                context.stroke();
+            }
+
+            context.fillStyle = "#ff0066";
+
+            for (let i = 0; i < puntos.length; i++) {
+                context.beginPath();
+                context.arc(
+                    puntos[i].x,
+                    puntos[i].y,
+                    5,
+                    0,
+                    Math.PI * 2
+                );
+                context.fill();
+            }
+
+            angulo += 0.01;
+            requestAnimationFrame(dibujar);
+        }
+
+        dibujar();
+    </script>
+
+</body>
+
+</html>
