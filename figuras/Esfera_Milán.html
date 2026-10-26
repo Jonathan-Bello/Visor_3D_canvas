@@ -1,0 +1,61 @@
+// Dibuja una esfera 3D con malla sobre un canvas 2D.
+class Esfera {
+	constructor(ctx, { x, y, radio = 100, color = "#3498db", lineas = 18 } = {}) {
+		this.ctx = ctx;
+		this.x = x ?? ctx.canvas.width / 2;
+		this.y = y ?? ctx.canvas.height / 2;
+		this.radio = radio;
+		this.color = color;
+		this.lineas = Math.max(4, lineas);
+	}
+
+	dibujar(rotacion = 0) {
+		const ctx = this.ctx;
+		const r = this.radio;
+		ctx.save();
+
+		// Base esférica con iluminación sencilla.
+		const luz = ctx.createRadialGradient(
+			this.x - r * 0.35,
+			this.y - r * 0.4,
+			r * 0.05,
+			this.x,
+			this.y,
+			r
+		);
+		luz.addColorStop(0, "#ffffff");
+		luz.addColorStop(0.18, this.color);
+		luz.addColorStop(1, "#12345a");
+		ctx.beginPath();
+		ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+		ctx.fillStyle = luz;
+		ctx.fill();
+		ctx.clip();
+
+		ctx.strokeStyle = "rgba(255,255,255,0.65)";
+		ctx.lineWidth = 1;
+
+		// Meridianos, comprimidos según la perspectiva.
+		for (let i = 0; i < this.lineas; i++) {
+			const angulo = (i / this.lineas) * Math.PI + rotacion;
+			const ancho = Math.abs(Math.cos(angulo)) * r;
+			ctx.beginPath();
+			ctx.ellipse(this.x, this.y, Math.max(1, ancho), r, 0, 0, Math.PI * 2);
+			ctx.stroke();
+		}
+
+		// Paralelos.
+		for (let i = 1; i < this.lineas; i++) {
+			const latitud = -Math.PI / 2 + (i / this.lineas) * Math.PI;
+			const radioHorizontal = r * Math.cos(latitud);
+			const y = this.y - r * Math.sin(latitud);
+			ctx.beginPath();
+			ctx.ellipse(this.x, y, radioHorizontal, Math.max(1, radioHorizontal * 0.22), 0, 0, Math.PI * 2);
+			ctx.stroke();
+		}
+
+		ctx.restore();
+	}
+}
+
+if (typeof module !== "undefined") module.exports = Esfera;
